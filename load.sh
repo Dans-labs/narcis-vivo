@@ -7,7 +7,7 @@ do
 	rm -f /tmp/$source.nt
 	touch /tmp/$source.nt
 	echo $source
-	for file in data/VIVO/$source/*
+	for file in triples/$source/*
 	do
 		cat $file >> /tmp/$source.nt
 	done

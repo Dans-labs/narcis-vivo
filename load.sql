@@ -1,0 +1,17 @@
+select * from load_list;
+ld_dir('/home/cgueret/narcis-vivo/triples/eur/' , '*.nt' , 'http://www.example.org/eur' );
+ld_dir('/home/cgueret/narcis-vivo/triples/kun/' , '*.nt' , 'http://www.example.org/kun' );
+ld_dir('/home/cgueret/narcis-vivo/triples/ouh/' , '*.nt' , 'http://www.example.org/ouh' );
+ld_dir('/home/cgueret/narcis-vivo/triples/rug/' , '*.nt' , 'http://www.example.org/rug' );
+ld_dir('/home/cgueret/narcis-vivo/triples/rul/' , '*.nt' , 'http://www.example.org/rul' );
+ld_dir('/home/cgueret/narcis-vivo/triples/rum/' , '*.nt' , 'http://www.example.org/rum' );
+ld_dir('/home/cgueret/narcis-vivo/triples/ruu/' , '*.nt' , 'http://www.example.org/ruu' );
+ld_dir('/home/cgueret/narcis-vivo/triples/tud/' , '*.nt' , 'http://www.example.org/tud' );
+ld_dir('/home/cgueret/narcis-vivo/triples/tue/' , '*.nt' , 'http://www.example.org/tue' );
+ld_dir('/home/cgueret/narcis-vivo/triples/tum/' , '*.nt' , 'http://www.example.org/tum' );
+ld_dir('/home/cgueret/narcis-vivo/triples/uva/' , '*.nt' , 'http://www.example.org/uva' );
+ld_dir('/home/cgueret/narcis-vivo/triples/uvt/' , '*.nt' , 'http://www.example.org/uvt' );
+ld_dir('/home/cgueret/narcis-vivo/triples/vua/' , '*.nt' , 'http://www.example.org/vua' );
+ld_dir('/home/cgueret/narcis-vivo/triples/wur/' , '*.nt' , 'http://www.example.org/wur' );
+rdf_loader_run();
+checkpoint;
