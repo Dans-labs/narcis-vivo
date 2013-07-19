@@ -1,3 +1,6 @@
 [submodule "harvester"]
 	path = harvester
 	url = git@github.com:Dans-labs/VIVO-Harvester.git
+[submodule "data"]
+	path = data
+	url = git@github.com:cgueret/DataDumps.git
