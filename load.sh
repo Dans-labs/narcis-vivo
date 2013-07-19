@@ -1,11 +1,14 @@
 #!/bin/bash
 
+DATA=$1
+
 ###########################################################
 # Configuration parameters
 ###########################################################
-export HARVEST_NAME=vivo-vu-data
-HARVESTER_INSTALL_DIR=/home/cgueret/Downloads/harvester-1.5
-CSV_DIR=/home/cgueret/Dropbox/Documents/Projects/DANS/Vivo/data/csv
+export HARVEST_NAME=vivo-$DATA
+HARVESTER_INSTALL_DIR=./harvester
+CSV_DIR=./data/VIVO/$DATA
+NT_DIR=./triples/$DATA
 
 # Set extra parameters
 export DATE=`date +%Y-%m-%d'T'%T`
@@ -24,9 +27,11 @@ set -e
 ###########################################################
 process ()
 {
+	mkdir -p $NT_DIR
+
 	csv_file=$1
 	csv_name=$(basename $1)
-	table=$(echo "$csv_name" | sed -e 's/_vivo_//' | sed -e 's/\.csv//')
+	table=$(echo "$csv_name" | sed -e 's/\.csv//')
 
 	if [ -f datamap/$table.datamap.xsl ]; then
 		#
