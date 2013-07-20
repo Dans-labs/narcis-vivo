@@ -7,6 +7,7 @@
 
 	<xsl:output method="xml" indent="yes" />
 	<xsl:variable name="baseURI" select="'http://XXX.example.org/'" />
+	<xsl:variable name="baseURICommon" select="'http://common.example.org/'" />
 
 	<xsl:template match="rdf:RDF">
 		<rdf:RDF>
@@ -19,7 +20,7 @@
 		<xsl:param name="id_pers" select="$this/db:PERS_ID" />
 		<xsl:param name="id_term" select="$this/db:TERM" />
 		<rdf:Description rdf:about="{$baseURI}individual/Person_{$id_pers}">
-			<vivo:hasResearchArea rdf:resource="{$baseURI}individual/Concept_{$id_term}" />
+			<vivo:hasResearchArea rdf:resource="{$baseURICommon}individual/Concept_{$id_term}" />
 		</rdf:Description>
 		<rdf:Description rdf:about="{$baseURI}individual/Concept_{$id_term}">
 			<vivo:researchAreaOf rdf:resource="{$baseURI}individual/Person_{$id_pers}" />

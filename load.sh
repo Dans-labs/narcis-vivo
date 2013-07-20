@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SOURCES='eur kun ouh rug rul rum ruu tud tue tum uva uvt vua wur' 
+SOURCES='common eur kun ouh rug rul rum ruu tud tue tum uva uvt vua wur' 
 
 for source in $SOURCES;
 do

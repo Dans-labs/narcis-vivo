@@ -92,7 +92,7 @@ process ()
 			rapper -q -i guess -o ntriples /tmp/harvester/translated/$file >> $NT_DIR/$table.nt
 		done
 		# replace name space
-		# sed -i -e 's/example.org/localhost:8080\/vivo/g' $NT_DIR/$table.nt
+		sed -i -e 's/XXX/$DATA/g' $NT_DIR/$table.nt
 		
 		#
 		# Clean up

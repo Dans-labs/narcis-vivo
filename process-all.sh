@@ -1,5 +1,6 @@
 #!/bin/bash
 
+./csv-to-rdf.sh common
 ./csv-to-rdf.sh eur
 ./csv-to-rdf.sh kun
 ./csv-to-rdf.sh ouh

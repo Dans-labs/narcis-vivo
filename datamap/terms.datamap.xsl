@@ -7,6 +7,7 @@
 
 	<xsl:output method="xml" indent="yes" />
 	<xsl:variable name="baseURI" select="'http://XXX.example.org/'" />
+	<xsl:variable name="baseURICommon" select="'http://common.example.org/'" />
 
 	<xsl:template match="rdf:RDF">
 		<rdf:RDF>
@@ -17,10 +18,10 @@
 	<xsl:template match="rdf:Description">
 		<xsl:param name="this" select="." />
 		<xsl:param name="id" select="$this/db:TERM" />
-		<rdf:Description rdf:about="{$baseURI}individual/Concept_{$id}">
+		<rdf:Description rdf:about="{$baseURICommon}individual/Concept_{$id}">
 			<rdf:type rdf:resource="http://www.w3.org/2004/02/skos/core#Concept" />
 			<xsl:if test="not( $this/db:BROADERTERM = 'null' )">
-				<skos:broader rdf:resource="{$baseURI}individual/Concept_{$this/db:BROADERTERM}" />
+				<skos:broader rdf:resource="{$baseURICommon}individual/Concept_{$this/db:BROADERTERM}" />
 			</xsl:if>
 			<xsl:if test="not( $this/db:TERM_NL = 'null' )">
 				<skos:prefLabel xml:lang='nl'>
@@ -37,8 +38,8 @@
 			</xsl:if>
 		</rdf:Description>
 		<!-- Add inverse relation -->
-		<rdf:Description rdf:about="{$baseURI}individual/Concept_{$this/db:BROADERTERM}">
-			<skos:narrower rdf:resource="{$baseURI}individual/Concept_{$id}" />
+		<rdf:Description rdf:about="{$baseURICommon}individual/Concept_{$this/db:BROADERTERM}">
+			<skos:narrower rdf:resource="{$baseURICommon}individual/Concept_{$id}" />
 		</rdf:Description>
 	</xsl:template>
 </xsl:stylesheet>
