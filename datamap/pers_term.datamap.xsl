@@ -6,7 +6,7 @@
 	xmlns:db='jdbc:h2:/tmp/harvester/store/fields/CSV/' xmlns:vitro-public="http://vitro.mannlib.cornell.edu/ns/vitro/public#">
 
 	<xsl:output method="xml" indent="yes" />
-	<xsl:variable name="baseURI" select="'http://example.org/'" />
+	<xsl:variable name="baseURI" select="'http://XXX.example.org/'" />
 
 	<xsl:template match="rdf:RDF">
 		<rdf:RDF>

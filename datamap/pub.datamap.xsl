@@ -8,7 +8,7 @@
 	xmlns:bigint="java.math.BigInteger" exclude-result-prefixes="md5 bigint">
 
 	<xsl:output method="xml" indent="yes" />
-	<xsl:variable name="baseURI" select="'http://example.org/'" />
+	<xsl:variable name="baseURI" select="'http://XXX.example.org/'" />
 	
 	<xsl:template match="rdf:RDF">
 		<rdf:RDF>
