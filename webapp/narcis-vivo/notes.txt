@@ -1,3 +1,5 @@
+Layout: http://bit.ly/19dSGaw
+
 http://www.rechercheisidore.fr/sparql/
 
 select * where {
