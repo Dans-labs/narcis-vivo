@@ -1,5 +1,6 @@
 package nl.knaw.dans.labs.narcisvivo.resource;
 
+import nl.knaw.dans.labs.narcisvivo.data.ConceptMapping;
 import nl.knaw.dans.labs.narcisvivo.util.Parameters;
 
 import org.json.JSONArray;
@@ -60,8 +61,19 @@ public class InterestIndexResource extends ServerResource {
 		}
 
 		// Look for a specific resource ?
-		if (resource != null)
-			lookupResource(resource, output);
+		if (resource != null) {
+			try {
+				output.put("results", new JSONArray());
+
+				// Add for this resource
+				lookupResource(resource, output);
+				
+				// Add for all the sameAs resources
+				for (String sameAs: ConceptMapping.getMatchingConcepts(resource))
+					lookupResource(sameAs, output);
+			} catch (JSONException e) {
+			}
+		}
 
 		setStatus(Status.SUCCESS_OK);
 		return new JsonRepresentation(output);
@@ -70,8 +82,10 @@ public class InterestIndexResource extends ServerResource {
 	/**
 	 * @param resource
 	 * @param output
+	 * @throws JSONException
 	 */
-	private void lookupResource(String resource, JSONObject output) {
+	private void lookupResource(String resource, JSONObject output)
+			throws JSONException {
 		// Look up the entity in the index
 		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
 		Query query = new Query(ENTITY);
@@ -79,16 +93,8 @@ public class InterestIndexResource extends ServerResource {
 				Query.FilterOperator.EQUAL, resource));
 
 		// Prepare the reply
-		try {
-			int size = 0;
-			for (Entity entity : store.prepare(query).asIterable()) {
-				output.append("results", (String) entity.getProperty(PERSON));
-				size++;
-			}
-			if (size == 0)
-				output.put("results", new JSONArray());
-		} catch (JSONException e) {
-		}
+		for (Entity entity : store.prepare(query).asIterable())
+			output.append("results", (String) entity.getProperty(PERSON));
 	}
 
 	/**
