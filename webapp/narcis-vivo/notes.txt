@@ -1,1 +1,45 @@
 http://www.rechercheisidore.fr/sparql/
+
+select * where {
+?s <http://xmlns.com/foaf/0.1/topic_interest> <http://www.rechercheisidore.fr/subject/SHS:SOCIO>. 
+?s <http://xmlns.com/foaf/0.1/givenName> ?g.
+?s <http://xmlns.com/foaf/0.1/familyName> ?f.
+}
+
+
+Earth Sciences = Earth sciences
+Allergology = Allergology
+Computer science = Computer science
+Pediatrics = Pediatrics
+Psychology = Psychology
+History = History
+Biotechnology = Biotechnology
+Mathematics = Mathematics
+Mechanical engineering = Mechanical engineering
+Philosophy = Philosophy
+Catalysis = Catalysis
+Education = Education
+Education = Education
+Dermatology = Dermatology
+Life Sciences = Life sciences
+Gynecology and obstetrics = Gynaecology and obstetrics
+Surgery = Surgery
+Numerical Analysis = Numerical analysis
+Numerical Analysis = Numerical analysis
+Computer Science = Computer science
+Operations Research = Operations research
+Demography = Demography
+Biotechnology = Biotechnology
+Geophysics = Geophysics
+Political science = Political science
+Analytical chemistry = Analytical chemistry
+Organic chemistry = Organic chemistry
+Inorganic chemistry = Inorganic chemistry
+Psychology = Psychology
+Environmental studies = Environmental studies
+Sociology = Sociology
+Geophysics = Geophysics
+Physics = Physics
+Physics = Physics
+Mechanical engineering = Mechanical engineering
+Genetics = Genetics
