@@ -103,6 +103,12 @@ public class PersonIndexResource extends ServerResource {
 		if (p == null)
 			return;
 
+		// Add the name
+		try {
+			output.put("name", p.getName());
+		} catch (JSONException e) {
+		}
+
 		// Get the right SPARQL template and end point
 		String endPoint = Parameters.getEndPoint(p.getSource());
 		String rq = "select ?p ?o where { <RESOURCE> ?p ?o }";

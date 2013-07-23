@@ -79,7 +79,7 @@ public class Persons {
 		String firstName = (String) entity.getProperty(FIRST);
 		String lastName = (String) entity.getProperty(LAST);
 		String source = (String) entity.getProperty(SOURCE);
-		String uri = entity.getKey().toString();
+		String uri = entity.getKey().getName();
 		return new Person(firstName, lastName, source, uri);
 	}
 
