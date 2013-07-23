@@ -1,10 +1,16 @@
 package nl.knaw.dans.labs.narcisvivo.resource;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import nl.knaw.dans.labs.narcisvivo.data.Concepts;
+import nl.knaw.dans.labs.narcisvivo.data.Interests;
+import nl.knaw.dans.labs.narcisvivo.data.Person;
+import nl.knaw.dans.labs.narcisvivo.data.Persons;
 import nl.knaw.dans.labs.narcisvivo.util.Parameters;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.Request;
@@ -15,30 +21,12 @@ import org.restlet.representation.Representation;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.FetchOptions;
-import com.google.appengine.api.datastore.PreparedQuery;
-import com.google.appengine.api.datastore.Query;
-import com.google.appengine.api.datastore.Query.CompositeFilter;
-import com.google.appengine.api.datastore.Query.Filter;
-import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Resource;
 
 public class PersonIndexResource extends ServerResource {
-	// Entity type for the data store
-	private final static String ENTITY = "Person";
-
-	// Keys for the data store
-	private final static String SOURCE = "source";
-	private final static String FIRST = "firstName";
-	private final static String LAST = "lastName";
-	private final static String RESOURCE = "URI";
 
 	/*
 	 * (non-Javadoc)
@@ -53,7 +41,7 @@ public class PersonIndexResource extends ServerResource {
 		String source = getQuery().getFirstValue("source");
 		String resetKey = getQuery().getFirstValue("reset");
 		String resource = getQuery().getFirstValue("resource");
-		String search = getQuery().getFirstValue("search");
+		String query = getQuery().getFirstValue("query");
 
 		// Are we scoped to a particular source ?
 		if (source != null)
@@ -70,13 +58,13 @@ public class PersonIndexResource extends ServerResource {
 		}
 
 		// Look for a specific resource ?
-		if (resource != null && search == null) 
-			lookupResource(resource, output);		
-		
+		if (resource != null && query == null)
+			lookupResource(resource, output);
+
 		// Or search the index ?
-		if (resource == null && search != null)
-			searchResource(search, output);
-		
+		if (resource == null && query != null)
+			queryResource(query, output);
+
 		setStatus(Status.SUCCESS_OK);
 		return new JsonRepresentation(output);
 	}
@@ -85,33 +73,21 @@ public class PersonIndexResource extends ServerResource {
 	 * @param search
 	 * @param output
 	 */
-	private void searchResource(String search, JSONObject output) {
-		// Search for matching resources
-		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
-		Query query = new Query(ENTITY);
-		List<Filter> filters = new ArrayList<Filter>();
-		filters.add(new FilterPredicate(FIRST, Query.FilterOperator.EQUAL,
-				search));
-		filters.add(new FilterPredicate(LAST, Query.FilterOperator.EQUAL,
-				search));
-		Filter filter = new CompositeFilter(Query.CompositeFilterOperator.OR,
-				filters);
-		query.setFilter(filter);
-		PreparedQuery pq = store.prepare(query);
-		List<Entity> results = pq.asList(FetchOptions.Builder.withLimit(5));
+	private void queryResource(String query, JSONObject output) {
+		// Query the index
+		List<Person> persons = Persons.query(query);
 
-		// Format the results
 		try {
-			for (Entity entity : results) {
+			// Prepare the reply
+			output.put("query", query);
+			output.put("suggestions", new JSONArray());
+
+			// Format the results
+			for (Person person : persons) {
 				JSONObject entry = new JSONObject();
-				StringBuffer tmp = new StringBuffer();
-				tmp.append((String) entity.getProperty(FIRST));
-				tmp.append(" ").append((String) entity.getProperty(LAST));
-				tmp.append(" (").append((String) entity.getProperty(SOURCE))
-						.append(")");
-				entry.put("name", tmp.toString());
-				entry.put("resource", entity.getProperty(RESOURCE));
-				output.append("results", entry);
+				entry.put("value", person.getName());
+				entry.put("data", person.getUri());
+				output.append("suggestions", entry);
 			}
 		} catch (JSONException e) {
 		}
@@ -122,16 +98,13 @@ public class PersonIndexResource extends ServerResource {
 	 * @param output
 	 */
 	private void lookupResource(String resource, JSONObject output) {
-		// Look up the entity in the index
-		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
-		Query query = new Query(ENTITY);
-		query.setFilter(new FilterPredicate(RESOURCE,
-				Query.FilterOperator.EQUAL, resource));
-		Entity entity = store.prepare(query).asSingleEntity();
-		String source = (String) entity.getProperty(SOURCE);
-		
+		// Lookup for the person
+		Person p = Persons.getPerson(resource);
+		if (p == null)
+			return;
+
 		// Get the right SPARQL template and end point
-		String endPoint = Parameters.getEndPoint(source);
+		String endPoint = Parameters.getEndPoint(p.getSource());
 		String rq = "select ?p ?o where { <RESOURCE> ?p ?o }";
 
 		// Instantiate the template
@@ -145,12 +118,54 @@ public class PersonIndexResource extends ServerResource {
 		while (results.hasNext()) {
 			QuerySolution s = results.next();
 			try {
+				// Put the triples in the reply
 				JSONObject entry = new JSONObject();
-				entry.put("p",s.getResource("p").toString());
-				entry.put("o",s.get("o").toString());
-				output.append("results", entry);
+				entry.put("p", s.get("p").toString());
+				entry.put("o", s.get("o").toString());
+				output.append("triples", entry);
 			} catch (JSONException e) {
 			}
+		}
+
+		// Prepare a set of related researchers
+		Set<JSONObject> relations = new HashSet<JSONObject>();
+
+		// Iterate through the centre of interests of that person
+		for (String interest : Interests.getInterestsOf(resource)) {
+			// Add this to the output
+			String label = Concepts.getLabel(interest);
+			try {
+				JSONObject pair = new JSONObject();
+				pair.put("concept", interest);
+				pair.put("label", label);
+				output.append("interests", pair);
+			} catch (JSONException e) {
+			}
+
+			// Add related researchers
+			for (String person : Interests.getPersonsInterestedIn(interest,
+					true)) {
+				if (!person.equals(resource)) {
+					Person relPers = Persons.getPerson(person);
+					try {
+						if (relPers != null) {
+							JSONObject relation = new JSONObject();
+							relation.put("person", person);
+							relation.put("name", relPers.getName());
+							relation.put("source", relPers.getSource());
+							relations.add(relation);
+						}
+					} catch (JSONException e) {
+					}
+				}
+			}
+		}
+
+		// Write down the set of researchers
+		try {
+			for (JSONObject relation : relations)
+				output.append("relation", relation);
+		} catch (JSONException e) {
 		}
 	}
 
@@ -158,15 +173,8 @@ public class PersonIndexResource extends ServerResource {
 	 * 
 	 */
 	public void updateIndex(String source) {
-		// Clean up the previous entries
-		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
-		Query query = new Query(ENTITY);
-		Filter filter = new FilterPredicate(SOURCE, Query.FilterOperator.EQUAL,
-				source);
-		query.setFilter(filter);
-		query.setKeysOnly();
-		for (Entity entity : store.prepare(query).asIterable())
-			store.delete(entity.getKey());
+		// Clean up the previous entries (no need, keys are unique)
+		// Persons.clear(source);
 
 		// Set things according to the source
 		String rqName = Parameters.getQuery(source, "persons");
@@ -193,19 +201,14 @@ public class PersonIndexResource extends ServerResource {
 			while (results.hasNext()) {
 				// Get the data
 				QuerySolution result = results.next();
-				Resource resource = result.getResource("resource");
+				String resource = result.getResource("resource").toString();
 				String firstName = result.getLiteral("firstName")
 						.getLexicalForm();
 				String lastName = result.getLiteral("lastName")
 						.getLexicalForm();
 
 				// Store the entity in the data store
-				Entity entity = new Entity(ENTITY);
-				entity.setProperty(RESOURCE, resource.toString());
-				entity.setProperty(FIRST, firstName);
-				entity.setProperty(LAST, lastName);
-				entity.setProperty(SOURCE, source);
-				store.put(entity);
+				Persons.add(firstName, lastName, source, resource);
 			}
 
 			// Switch to next page

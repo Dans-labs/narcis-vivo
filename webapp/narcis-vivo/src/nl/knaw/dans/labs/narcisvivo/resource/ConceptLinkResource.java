@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import nl.knaw.dans.labs.narcisvivo.data.ConceptMapping;
+import nl.knaw.dans.labs.narcisvivo.data.Concepts;
 import nl.knaw.dans.labs.narcisvivo.util.LevenshteinDistance;
 
 import org.json.JSONArray;
@@ -68,6 +69,9 @@ public class ConceptLinkResource extends ServerResource {
 	 * 
 	 */
 	public void computeLinks() {
+		// Clean up all the previous concepts
+		Concepts.clear(null);
+
 		// Get the concepts from Isidore
 		Request reqIsidore = new Request(Method.GET,
 				"war:///WEB-INF/queries/isidore/concepts.rq");
@@ -75,6 +79,13 @@ public class ConceptLinkResource extends ServerResource {
 				.handle(reqIsidore).getEntityAsText();
 		Map<Resource, Literal> conceptsIsidore = getConceptLabel(
 				"http://www.rechercheisidore.fr/sparql/", queryIsidore);
+
+		// Store the concepts
+		for (Entry<Resource, Literal> conceptIsidore : conceptsIsidore
+				.entrySet()) {
+			Concepts.add("isidore", conceptIsidore.getKey().toString(),
+					conceptIsidore.getValue().getLexicalForm());
+		}
 
 		// Get the concepts from Narcis
 		Request reqNarcis = new Request(Method.GET,
@@ -84,6 +95,12 @@ public class ConceptLinkResource extends ServerResource {
 		Map<Resource, Literal> conceptsNarcis = getConceptLabel(
 				"http://lod.cedar-project.nl:8888/openrdf-sesame/repositories/common",
 				queryNarcis);
+
+		// Store the concepts
+		for (Entry<Resource, Literal> conceptNarcis : conceptsNarcis.entrySet()) {
+			Concepts.add("narcis", conceptNarcis.getKey().toString(),
+					conceptNarcis.getValue().getLexicalForm());
+		}
 
 		// Clean up the previous pairs
 		ConceptMapping.clear();

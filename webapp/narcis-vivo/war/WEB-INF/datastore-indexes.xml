@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<datastore-indexes autoGenerate="false">
+  <datastore-index kind="Person" ancestor="false">
+    <property name="firstName" direction="asc" />
+    <property name="lastName" direction="asc" />
+  </datastore-index>
+  <datastore-index kind="Interest" ancestor="false">
+    <property name="interest" direction="asc" />
+    <property name="person" direction="asc" />
+  </datastore-index>
+  <datastore-index kind="ConceptPair" ancestor="false">
+    <property name="Isidore" direction="asc" />
+    <property name="Narcis" direction="asc" />
+  </datastore-index>
+</datastore-indexes>

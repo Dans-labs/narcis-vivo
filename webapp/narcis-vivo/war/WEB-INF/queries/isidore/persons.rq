@@ -1,5 +1,5 @@
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-select ?resource ?firstName ?lastName where {
+select distinct ?resource ?firstName ?lastName where {
 ?resource a foaf:Person.
 ?resource foaf:givenName ?firstName.
 ?resource foaf:familyName ?lastName.

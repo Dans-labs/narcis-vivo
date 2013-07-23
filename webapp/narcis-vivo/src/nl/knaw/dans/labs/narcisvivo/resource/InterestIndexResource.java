@@ -1,6 +1,6 @@
 package nl.knaw.dans.labs.narcisvivo.resource;
 
-import nl.knaw.dans.labs.narcisvivo.data.ConceptMapping;
+import nl.knaw.dans.labs.narcisvivo.data.Interests;
 import nl.knaw.dans.labs.narcisvivo.util.Parameters;
 
 import org.json.JSONArray;
@@ -12,25 +12,12 @@ import org.restlet.representation.Representation;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Query;
-import com.google.appengine.api.datastore.Query.Filter;
-import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 
 public class InterestIndexResource extends ServerResource {
-	// Entity type for the data store
-	private final static String ENTITY = "Interest";
-
-	// Keys for the data store
-	private final static String SOURCE = "source";
-	private final static String RESOURCE = "interest";
-	private final static String PERSON = "person";
 
 	/*
 	 * (non-Javadoc)
@@ -65,12 +52,10 @@ public class InterestIndexResource extends ServerResource {
 			try {
 				output.put("results", new JSONArray());
 
-				// Add for this resource
-				lookupResource(resource, output);
+				// Add all the persons interested
+				for (String person: Interests.getPersonsInterestedIn(resource, true))
+					output.append("results", person);
 				
-				// Add for all the sameAs resources
-				for (String sameAs: ConceptMapping.getMatchingConcepts(resource))
-					lookupResource(sameAs, output);
 			} catch (JSONException e) {
 			}
 		}
@@ -78,38 +63,13 @@ public class InterestIndexResource extends ServerResource {
 		setStatus(Status.SUCCESS_OK);
 		return new JsonRepresentation(output);
 	}
-
-	/**
-	 * @param resource
-	 * @param output
-	 * @throws JSONException
-	 */
-	private void lookupResource(String resource, JSONObject output)
-			throws JSONException {
-		// Look up the entity in the index
-		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
-		Query query = new Query(ENTITY);
-		query.setFilter(new FilterPredicate(RESOURCE,
-				Query.FilterOperator.EQUAL, resource));
-
-		// Prepare the reply
-		for (Entity entity : store.prepare(query).asIterable())
-			output.append("results", (String) entity.getProperty(PERSON));
-	}
-
+	
 	/**
 	 * 
 	 */
 	public void updateIndex(String source) {
 		// Clean up the previous entries
-		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
-		Query query = new Query(ENTITY);
-		Filter filter = new FilterPredicate(SOURCE, Query.FilterOperator.EQUAL,
-				source);
-		query.setFilter(filter);
-		query.setKeysOnly();
-		for (Entity entity : store.prepare(query).asIterable())
-			store.delete(entity.getKey());
+		Interests.clear(source);
 
 		// Set things according to the source
 		String endPoint = Parameters.getEndPoint(source);
@@ -141,10 +101,7 @@ public class InterestIndexResource extends ServerResource {
 				String interest = result.get("r").toString();
 
 				// Store the entity in the data store
-				Entity entity = new Entity(ENTITY);
-				entity.setProperty(RESOURCE, interest);
-				entity.setProperty(PERSON, person);
-				store.put(entity);
+				Interests.add(source, interest, person);
 			}
 
 			// Switch to next page
