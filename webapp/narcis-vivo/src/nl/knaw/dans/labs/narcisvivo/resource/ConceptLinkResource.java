@@ -18,8 +18,12 @@ import org.restlet.data.Status;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Get;
+import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
+import com.google.appengine.api.taskqueue.Queue;
+import com.google.appengine.api.taskqueue.QueueFactory;
+import com.google.appengine.api.taskqueue.TaskOptions;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QuerySolution;
@@ -40,8 +44,14 @@ public class ConceptLinkResource extends ServerResource {
 
 		// Shall we reset the mappings?
 		String reset = getQuery().getFirstValue("reset");
-		if (reset != null && reset.equals("true"))
-			computeLinks();
+		if (reset != null && reset.equals("true")) {
+			Queue queue = QueueFactory.getDefaultQueue();
+			// Make a task
+			TaskOptions task = TaskOptions.Builder.withUrl("/api/concept")
+					.method(TaskOptions.Method.POST);
+			queue.add(task);
+
+		}
 
 		// Find the requested concept pair
 		String resource = getQuery().getFirstValue("resource");
@@ -66,9 +76,10 @@ public class ConceptLinkResource extends ServerResource {
 	}
 
 	/**
-	 * 
+	 * Post requests are used by the tasks to update the index
 	 */
-	public void computeLinks() {
+	@Post
+	public void post() {
 		// Clean up all the previous concepts
 		Concepts.clear(null);
 
@@ -128,7 +139,7 @@ public class ConceptLinkResource extends ServerResource {
 	 *            the text of the query
 	 * @return a Map<Resource, Literal> associating a label to every resource
 	 */
-	public Map<Resource, Literal> getConceptLabel(String endPoint, String query) {
+	private Map<Resource, Literal> getConceptLabel(String endPoint, String query) {
 		// For the output
 		Map<Resource, Literal> output = new HashMap<Resource, Literal>();
 

@@ -3,14 +3,23 @@ package nl.knaw.dans.labs.narcisvivo.data;
 import java.util.HashSet;
 import java.util.Set;
 
-import nl.knaw.dans.labs.narcisvivo.util.Parameters;
 
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QueryExecutionFactory;
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.Filter;
+import com.google.appengine.api.datastore.Query.FilterPredicate;
 
 public class Interests {
+	// Entity type for the data store
+	private final static String ENTITY = "Interest";
+
+	// Keys for the data store
+	private final static String SOURCE = "source";
+	private final static String PERSON = "person";
+	private final static String CONCEPT = "concept";
+
 	/**
 	 * @param concept
 	 * @return
@@ -20,60 +29,24 @@ public class Interests {
 		// Prepare the output
 		Set<String> output = new HashSet<String>();
 
-		// Add the persons interested in that concept
-		for (String source : Parameters.sources)
-			getPersonsInterested(output, source, concept);
-
-		// Do the same for sameAs concepts if requested
+		// List of concepts to search for
+		Set<String> concepts = new HashSet<String>();
+		concepts.add(concept);
 		if (withSameAs)
 			for (String sameAs : ConceptMapping.getMatchingConcepts(concept))
-				for (String source : Parameters.sources)
-					getPersonsInterested(output, source, sameAs);
+				concepts.add(sameAs);
+
+		// Prepare the query
+		Query query = new Query(ENTITY);
+		query.setFilter(new FilterPredicate(CONCEPT, Query.FilterOperator.IN,
+				concepts));
+
+		// Add the persons interested in any of the concepts
+		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
+		for (Entity entity : store.prepare(query).asIterable())
+			output.add((String) entity.getProperty(CONCEPT));
 
 		return output;
-	}
-
-	/**
-	 * 
-	 */
-	private static void getPersonsInterested(Set<String> output, String source,
-			String concept) {
-		// Set things according to the source
-		String endPoint = Parameters.getEndPoint(source);
-		String rq = "";
-		if (source.equals("isidore"))
-			rq = "select distinct ?p where {?p <http://xmlns.com/foaf/0.1/topic_interest> <CONCEPT>}";
-		else
-			rq = "select distinct ?p where {?p <http://vivoweb.org/ontology/core#hasResearchArea> <CONCEPT>}";
-		rq = rq.replace("CONCEPT", concept);
-
-		// Parameters for paginated query
-		boolean newData = true;
-		int offset = 0;
-
-		while (newData) {
-			// Compose query
-			StringBuffer queryPage = new StringBuffer(rq);
-			queryPage.append(" OFFSET ").append(offset).append("LIMIT 1000");
-
-			// Execute the query
-			QueryExecution qexec = QueryExecutionFactory.sparqlService(
-					endPoint, queryPage.toString());
-			qexec.setTimeout(0);
-			ResultSet results = qexec.execSelect();
-			newData = results.hasNext();
-			while (results.hasNext()) {
-				// Get the data
-				QuerySolution result = results.next();
-				String person = result.get("p").toString();
-
-				// Store the entity in the data store
-				output.add(person);
-			}
-
-			// Switch to next page
-			offset += 1000;
-		}
 	}
 
 	/**
@@ -84,33 +57,46 @@ public class Interests {
 		// Prepare the output
 		Set<String> output = new HashSet<String>();
 
-		// Get the person
-		Person p = Persons.getPerson(person);
-		String source = p.getSource();
+		// Prepare the query
+		Query query = new Query(ENTITY);
+		query.setFilter(new FilterPredicate(PERSON, Query.FilterOperator.EQUAL,
+				person));
 
-		// Set things according to the source
-		String endPoint = Parameters.getEndPoint(source);
-		String rq = "";
-		if (source.equals("isidore"))
-			rq = "select distinct ?c where {<PERSON> <http://xmlns.com/foaf/0.1/topic_interest> ?c}";
-		else
-			rq = "select distinct ?c where {<PERSON> <http://vivoweb.org/ontology/core#hasResearchArea> ?c}";
-		rq = rq.replace("PERSON", person);
-
-		// Execute the query
-		QueryExecution qexec = QueryExecutionFactory
-				.sparqlService(endPoint, rq);
-		qexec.setTimeout(0);
-		ResultSet results = qexec.execSelect();
-		while (results.hasNext()) {
-			// Get the data
-			QuerySolution result = results.next();
-			String concept = result.get("c").toString();
-
-			// Store the entity in the data store
-			output.add(concept);
-		}
+		// Execute
+		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
+		for (Entity entity : store.prepare(query).asIterable())
+			output.add((String) entity.getProperty(CONCEPT));
 
 		return output;
+	}
+
+	/**
+	 * @param source
+	 */
+	public static void clear(String source) {
+		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
+		Query query = new Query(ENTITY);
+		if (source != null) {
+			Filter filter = new FilterPredicate(SOURCE,
+					Query.FilterOperator.EQUAL, source);
+			query.setFilter(filter);
+		}
+		query.setKeysOnly();
+		for (Entity entity : store.prepare(query).asIterable())
+			store.delete(entity.getKey());
+	}
+
+	/**
+	 * @param person
+	 * @param interest
+	 * @param source
+	 */
+	public static void add(String person, String interest, String source) {
+		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
+		Entity entity = new Entity(ENTITY);
+		entity.setProperty(PERSON, person);
+		entity.setProperty(CONCEPT, interest);
+		entity.setProperty(SOURCE, source);
+		store.put(entity);
 	}
 }

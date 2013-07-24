@@ -8,4 +8,8 @@
     <property name="Isidore" direction="asc" />
     <property name="Narcis" direction="asc" />
   </datastore-index>
+  <datastore-index kind="Interest" ancestor="false">
+    <property name="person" direction="asc" />
+    <property name="concept" direction="asc" />
+    </datastore-index>
 </datastore-indexes>

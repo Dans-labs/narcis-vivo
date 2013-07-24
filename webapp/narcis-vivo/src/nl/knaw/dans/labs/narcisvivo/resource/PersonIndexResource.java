@@ -19,8 +19,12 @@ import org.restlet.data.Status;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Get;
+import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
+import com.google.appengine.api.taskqueue.Queue;
+import com.google.appengine.api.taskqueue.QueueFactory;
+import com.google.appengine.api.taskqueue.TaskOptions;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QuerySolution;
@@ -49,11 +53,20 @@ public class PersonIndexResource extends ServerResource {
 
 		// Shall we reset the index?
 		if (resetKey != null && resetKey.equals("true")) {
+			Queue queue = QueueFactory.getDefaultQueue();
 			if (source != null) {
-				updateIndex(source);
+				// Make a task
+				TaskOptions task = TaskOptions.Builder.withUrl("/api/person")
+						.payload(source).method(TaskOptions.Method.POST);
+				queue.add(task);
 			} else {
-				for (String src : Parameters.sources)
-					updateIndex(src);
+				for (String src : Parameters.sources) {
+					// Make a task
+					TaskOptions task = TaskOptions.Builder
+							.withUrl("/api/person").payload(src)
+							.method(TaskOptions.Method.POST);
+					queue.add(task);
+				}
 			}
 		}
 
@@ -70,8 +83,12 @@ public class PersonIndexResource extends ServerResource {
 	}
 
 	/**
+	 * Search for a person based on his first or last name
+	 * 
 	 * @param search
+	 *            the keyword for the search
 	 * @param output
+	 *            the object where to write a list of matching person instances
 	 */
 	private void queryResource(String query, JSONObject output) {
 		// Query the index
@@ -176,9 +193,13 @@ public class PersonIndexResource extends ServerResource {
 	}
 
 	/**
+	 * Post requests are used by the tasks to update the index
 	 * 
+	 * @param source
+	 *            the name of the source to update
 	 */
-	public void updateIndex(String source) {
+	@Post
+	public void post(String source) {
 		// Clean up the previous entries (no need, keys are unique)
 		// Persons.clear(source);
 
