@@ -102,7 +102,7 @@ function loadResource() {
 			});
 
 			// Fill in the relations
-			$.each(json.relation, function(index, value) {
+			$.each(json.relations, function(index, value) {
 				var cell1 = $("<td/>").text(index);
 				var cell2 = $("<td/>").text(value.source);
 				var link = $("<a/>").attr("href", "#").text(value.name);

@@ -1,15 +1,20 @@
 package nl.knaw.dans.labs.narcisvivo.data;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.CompositeFilter;
 import com.google.appengine.api.datastore.Query.Filter;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
+import com.google.appengine.api.datastore.Transaction;
+import com.google.appengine.api.datastore.TransactionOptions;
 
 public class Interests {
 	// Entity type for the data store
@@ -44,7 +49,7 @@ public class Interests {
 		// Add the persons interested in any of the concepts
 		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
 		for (Entity entity : store.prepare(query).asIterable())
-			output.add((String) entity.getProperty(CONCEPT));
+			output.add((String) entity.getProperty(PERSON));
 
 		return output;
 	}
@@ -71,22 +76,6 @@ public class Interests {
 	}
 
 	/**
-	 * @param source
-	 */
-	public static void clear(String source) {
-		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
-		Query query = new Query(ENTITY);
-		if (source != null) {
-			Filter filter = new FilterPredicate(SOURCE,
-					Query.FilterOperator.EQUAL, source);
-			query.setFilter(filter);
-		}
-		query.setKeysOnly();
-		for (Entity entity : store.prepare(query).asIterable())
-			store.delete(entity.getKey());
-	}
-
-	/**
 	 * @param person
 	 * @param interest
 	 * @param source
@@ -98,5 +87,36 @@ public class Interests {
 		entity.setProperty(CONCEPT, interest);
 		entity.setProperty(SOURCE, source);
 		store.put(entity);
+	}
+
+	/**
+	 * @param person
+	 * @param interest
+	 * @param source
+	 */
+	public static void delete(String person, String interest, String source) {
+		DatastoreService store = DatastoreServiceFactory.getDatastoreService();
+
+		// Prepare the query
+		Query query = new Query(ENTITY);
+		List<Filter> filters = new ArrayList<Filter>();
+		filters.add(new FilterPredicate(PERSON, Query.FilterOperator.EQUAL,
+				person));
+		filters.add(new FilterPredicate(CONCEPT, Query.FilterOperator.EQUAL,
+				interest));
+		filters.add(new FilterPredicate(SOURCE, Query.FilterOperator.EQUAL,
+				source));
+		Filter filter = new CompositeFilter(Query.CompositeFilterOperator.AND,
+				filters);
+		query.setFilter(filter);
+		query.setKeysOnly();
+
+		// Get the entities
+		List<Entity> entities = store.prepare(query).asList(
+				FetchOptions.Builder.withChunkSize(1000));
+
+		// Delete them
+		for (Entity entity : entities)
+			store.delete(entity.getKey());
 	}
 }

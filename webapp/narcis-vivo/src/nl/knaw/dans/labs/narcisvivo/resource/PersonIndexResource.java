@@ -120,9 +120,12 @@ public class PersonIndexResource extends ServerResource {
 		if (p == null)
 			return;
 
-		// Add the name
+		// Add the name and prepare the other fields
 		try {
 			output.put("name", p.getName());
+			output.put("triples", new JSONArray());
+			output.put("interests", new JSONArray());
+			output.put("relations", new JSONArray());
 		} catch (JSONException e) {
 		}
 
@@ -187,7 +190,7 @@ public class PersonIndexResource extends ServerResource {
 		// Write down the set of researchers
 		try {
 			for (JSONObject relation : relations)
-				output.append("relation", relation);
+				output.append("relations", relation);
 		} catch (JSONException e) {
 		}
 	}

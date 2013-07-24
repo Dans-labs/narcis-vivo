@@ -1,5 +1,11 @@
 package nl.knaw.dans.labs.narcisvivo.resource;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import nl.knaw.dans.labs.narcisvivo.data.Interests;
 import nl.knaw.dans.labs.narcisvivo.util.Parameters;
 
@@ -86,9 +92,37 @@ public class InterestIndexResource extends ServerResource {
 	 */
 	@Post
 	public void post(String source) {
-		// Clear the previous data
-		Interests.clear(source);
+		// Get the list of new interests for that source
+		Map<String, Set<String>> newInterestsMap = getNewInterests(source);
 		
+		// Iterate over all the individuals
+		for (Entry<String, Set<String>> entry : newInterestsMap.entrySet()) {
+			String person = entry.getKey();
+			Set<String> newInterests = entry.getValue();
+			
+			// Get current interests
+			Set<String> currentInterests = Interests.getInterestsOf(person);
+			
+			// Delete everything he is not interested in anymore
+			Set<String> delete = new HashSet<String>(currentInterests);
+			delete.removeAll(newInterests);
+			for (String interest: delete)
+				Interests.delete(person, interest, source);
+			
+			// Add everything new
+			Set<String> add = new HashSet<String>(newInterests);
+			add.removeAll(currentInterests);
+			for (String interest: add)
+				Interests.add(person, interest, source);
+		}
+	}
+
+	/**
+	 * @return
+	 */
+	private Map<String, Set<String>> getNewInterests(String source) {
+		Map<String, Set<String>> output = new HashMap<String, Set<String>>();
+
 		// Set things according to the source
 		String endPoint = Parameters.getEndPoint(source);
 		String rq = "";
@@ -117,13 +151,23 @@ public class InterestIndexResource extends ServerResource {
 				QuerySolution result = results.next();
 				String person = result.get("p").toString();
 				String interest = result.get("c").toString();
-				
+
 				// Add the interest
-				Interests.add(person, interest, source);
+				Set<String> interests = null;
+				if (!output.containsKey(person)) {
+					 interests = new HashSet<String>();
+					 output.put(person, interests);
+				} else {
+					interests = output.get(person);
+				}
+				interests.add(interest);
 			}
 
 			// Switch to next page
 			offset += 1000;
 		}
+
+		return output;
+
 	}
 }
