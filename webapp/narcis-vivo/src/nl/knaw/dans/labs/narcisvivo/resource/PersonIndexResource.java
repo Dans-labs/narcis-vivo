@@ -21,6 +21,8 @@ import org.restlet.representation.Representation;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
@@ -31,6 +33,8 @@ import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 
 public class PersonIndexResource extends ServerResource {
+	protected Logger logger = LoggerFactory
+			.getLogger(PersonIndexResource.class);
 
 	/*
 	 * (non-Javadoc)
@@ -115,6 +119,7 @@ public class PersonIndexResource extends ServerResource {
 	 * @param output
 	 */
 	private void lookupResource(String resource, JSONObject output) {
+		System.out.println("fdfdf");
 		// Lookup for the person
 		Person p = Persons.getPerson(resource);
 		if (p == null)
@@ -137,6 +142,7 @@ public class PersonIndexResource extends ServerResource {
 		rq = rq.replace("RESOURCE", resource);
 
 		// Send a SPARQL query to get all the data
+		logger.debug("Run" + rq);
 		QueryExecution qexec = QueryExecutionFactory
 				.sparqlService(endPoint, rq);
 		qexec.setTimeout(0);
@@ -157,6 +163,7 @@ public class PersonIndexResource extends ServerResource {
 		Set<JSONObject> relations = new HashSet<JSONObject>();
 
 		// Iterate through the centre of interests of that person
+		logger.debug("Process interests of " + resource);
 		for (String interest : Interests.getInterestsOf(resource)) {
 			// Add this to the output
 			String label = Concepts.getLabel(interest);
@@ -169,6 +176,7 @@ public class PersonIndexResource extends ServerResource {
 			}
 
 			// Add related researchers
+			logger.debug("Find person interested in " + interest);
 			for (String person : Interests.getPersonsInterestedIn(interest,
 					true)) {
 				if (!person.equals(resource)) {
