@@ -119,7 +119,6 @@ public class PersonIndexResource extends ServerResource {
 	 * @param output
 	 */
 	private void lookupResource(String resource, JSONObject output) {
-		System.out.println("fdfdf");
 		// Lookup for the person
 		Person p = Persons.getPerson(resource);
 		if (p == null)
@@ -142,7 +141,6 @@ public class PersonIndexResource extends ServerResource {
 		rq = rq.replace("RESOURCE", resource);
 
 		// Send a SPARQL query to get all the data
-		logger.debug("Run" + rq);
 		QueryExecution qexec = QueryExecutionFactory
 				.sparqlService(endPoint, rq);
 		qexec.setTimeout(0);
@@ -163,7 +161,6 @@ public class PersonIndexResource extends ServerResource {
 		Set<JSONObject> relations = new HashSet<JSONObject>();
 
 		// Iterate through the centre of interests of that person
-		logger.debug("Process interests of " + resource);
 		for (String interest : Interests.getInterestsOf(resource)) {
 			// Add this to the output
 			String label = Concepts.getLabel(interest);
