@@ -27,6 +27,9 @@
 				<rdfs:label>
 					<xsl:value-of select="$this/db:TITEL_EN" />
 				</rdfs:label>
+				<skos:prefLabel>
+					<xsl:value-of select="$this/db:TITEL_EN" />
+				</skos:prefLabel>
 			</xsl:if>
 			<xsl:if test="not( $this/db:START_DATE = 'null' )">
 				<vivo:dateTimeInterval

@@ -45,3 +45,7 @@ Physics = Physics
 Physics = Physics
 Mechanical engineering = Mechanical engineering
 Genetics = Genetics
+
+Copy the style of http://data.ordnancesurvey.co.uk/ontology/spatialrelations/within
+https://developers.google.com/appengine/docs/java/javadoc/com/google/appengine/api/ThreadManager
+http://stackoverflow.com/questions/14779003/synchronization-required-for-multithreaded-gae-apps

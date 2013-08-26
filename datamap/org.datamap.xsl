@@ -19,7 +19,7 @@
 		<xsl:param name="id" select="$this/db:ORG_ID" />
 		<!-- Describe the organization -->
 		<rdf:Description rdf:about="{$baseURI}individual/Organization_{$id}">
-			<rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Organization" />
+			<rdf:type rdf:resource="http://vivoweb.org/ontology/core#Organization" />
 			<xsl:if test="not( $this/db:NAAM = 'null' )">
 				<rdfs:label xml:lang='nl'>
 					<xsl:value-of select="$this/db:NAAM" />
@@ -32,6 +32,9 @@
 				<rdfs:label>
 					<xsl:value-of select="$this/db:NAAM_EN" />
 				</rdfs:label>
+				<skos:prefLabel>
+					<xsl:value-of select="$this/db:NAAM_EN" />
+				</skos:prefLabel>
 			</xsl:if>
 			<xsl:if test="not( $this/db:ADRES_ID = 'null' )">
 				<vivo:mailingAddress rdf:resource="{$baseURI}individual/{$this/db:ADRES_ID}" />
